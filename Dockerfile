@@ -1,5 +1,5 @@
 # 使用 NVIDIA CUDA 12.2.2、CUDNN 8 开发版和 Ubuntu 22.04 的镜像作为基础
-FROM registry-internal.cn-shanghai.aliyuncs.com/cxp_rep1/cuda:22.04_12.2
+FROM registry.cn-shanghai.aliyuncs.com/cxp_rep1/cuda:22.04_12.2
 
 # 设置非交互式安装，防止在安装过程中出现提示
 ENV DEBIAN_FRONTEND=noninteractive
