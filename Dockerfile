@@ -5,10 +5,22 @@ FROM registry.cn-shanghai.aliyuncs.com/cxp_rep1/cuda:22.04_12.2
 ENV DEBIAN_FRONTEND=noninteractive
 
 # 更新软件包列表并安装依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#         python3-pip \
+#         python3-dev \
+#         && rm -rf /var/lib/apt/lists/*
+
+# 更新软件包源
+RUN set -eux; \
+    apt-get update;
+
+# 安装所需的软件包
+RUN set -eux; \
+    apt-get install -y --no-install-recommends \
         python3-pip \
-        python3-dev \
-        && rm -rf /var/lib/apt/lists/*
+        python3-dev; \
+    rm -rf /var/lib/apt/lists/*;
+
 
 # 更新 pip
 RUN pip3 install --upgrade pip
