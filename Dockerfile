@@ -1,84 +1,24 @@
-ARG IMAGE_NAME=nvidia/cuda
-FROM ${IMAGE_NAME}:12.3.0-runtime-ubuntu22.04 as base
+# 使用 NVIDIA CUDA 12.2.2、CUDNN 8 开发版和 Ubuntu 22.04 的镜像作为基础
+FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
-ENV NV_CUDA_LIB_VERSION "12.3.0-1"
+# 设置非交互式安装，防止在安装过程中出现提示
+ENV DEBIAN_FRONTEND=noninteractive
 
-FROM base as base-amd64
-
-ENV NV_CUDA_CUDART_DEV_VERSION 12.3.52-1
-ENV NV_NVML_DEV_VERSION 12.3.52-1
-ENV NV_LIBCUSPARSE_DEV_VERSION 12.1.3.153-1
-ENV NV_LIBNPP_DEV_VERSION 12.2.2.32-1
-ENV NV_LIBNPP_DEV_PACKAGE libnpp-dev-12-3=${NV_LIBNPP_DEV_VERSION}
-
-ENV NV_LIBCUBLAS_DEV_VERSION 12.3.2.9-1
-ENV NV_LIBCUBLAS_DEV_PACKAGE_NAME libcublas-dev-12-3
-ENV NV_LIBCUBLAS_DEV_PACKAGE ${NV_LIBCUBLAS_DEV_PACKAGE_NAME}=${NV_LIBCUBLAS_DEV_VERSION}
-
-ENV NV_CUDA_NSIGHT_COMPUTE_VERSION 12.3.0-1
-ENV NV_CUDA_NSIGHT_COMPUTE_DEV_PACKAGE cuda-nsight-compute-12-3=${NV_CUDA_NSIGHT_COMPUTE_VERSION}
-
-ENV NV_NVPROF_VERSION 12.3.52-1
-ENV NV_NVPROF_DEV_PACKAGE cuda-nvprof-12-3=${NV_NVPROF_VERSION}
-
-ENV NV_LIBNCCL_DEV_PACKAGE_NAME libnccl-dev
-ENV NV_LIBNCCL_DEV_PACKAGE_VERSION 2.19.3-1
-ENV NCCL_VERSION 2.19.3-1
-ENV NV_LIBNCCL_DEV_PACKAGE ${NV_LIBNCCL_DEV_PACKAGE_NAME}=${NV_LIBNCCL_DEV_PACKAGE_VERSION}+cuda12.3
-FROM base as base-arm64
-
-ENV NV_CUDA_CUDART_DEV_VERSION 12.3.52-1
-ENV NV_NVML_DEV_VERSION 12.3.52-1
-ENV NV_LIBCUSPARSE_DEV_VERSION 12.1.3.153-1
-ENV NV_LIBNPP_DEV_VERSION 12.2.2.32-1
-ENV NV_LIBNPP_DEV_PACKAGE libnpp-dev-12-3=${NV_LIBNPP_DEV_VERSION}
-
-ENV NV_LIBCUBLAS_DEV_PACKAGE_NAME libcublas-dev-12-3
-ENV NV_LIBCUBLAS_DEV_VERSION 12.3.2.9-1
-ENV NV_LIBCUBLAS_DEV_PACKAGE ${NV_LIBCUBLAS_DEV_PACKAGE_NAME}=${NV_LIBCUBLAS_DEV_VERSION}
-
-ENV NV_CUDA_NSIGHT_COMPUTE_VERSION 12.3.0-1
-ENV NV_CUDA_NSIGHT_COMPUTE_DEV_PACKAGE cuda-nsight-compute-12-3=${NV_CUDA_NSIGHT_COMPUTE_VERSION}
-
-ENV NV_LIBNCCL_DEV_PACKAGE_NAME libnccl-dev
-ENV NV_LIBNCCL_DEV_PACKAGE_VERSION 2.19.3-1
-ENV NCCL_VERSION 2.19.3-1
-ENV NV_LIBNCCL_DEV_PACKAGE ${NV_LIBNCCL_DEV_PACKAGE_NAME}=${NV_LIBNCCL_DEV_PACKAGE_VERSION}+cuda12.3
-
-
-
-
-FROM base-${TARGETARCH}
-
-ARG TARGETARCH
-
-LABEL maintainer "NVIDIA CORPORATION <cudatools@nvidia.com>"
-
+# 更新软件包列表并安装依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cuda-cudart-dev-12-3=${NV_CUDA_CUDART_DEV_VERSION} \
-    cuda-command-line-tools-12-3=${NV_CUDA_LIB_VERSION} \
-    cuda-minimal-build-12-3=${NV_CUDA_LIB_VERSION} \
-    cuda-libraries-dev-12-3=${NV_CUDA_LIB_VERSION} \
-    cuda-nvml-dev-12-3=${NV_NVML_DEV_VERSION} \
-    ${NV_NVPROF_DEV_PACKAGE} \
-    ${NV_LIBNPP_DEV_PACKAGE} \
-    libcusparse-dev-12-3=${NV_LIBCUSPARSE_DEV_VERSION} \
-    ${NV_LIBCUBLAS_DEV_PACKAGE} \
-    ${NV_LIBNCCL_DEV_PACKAGE} \
-    ${NV_CUDA_NSIGHT_COMPUTE_DEV_PACKAGE} \
-    && rm -rf /var/lib/apt/lists/*
+        python3-pip \
+        python3-dev \
+        && rm -rf /var/lib/apt/lists/*
 
-# Keep apt from auto upgrading the cublas and nccl packages. See https://gitlab.com/nvidia/container-images/cuda/-/issues/88
-RUN apt-mark hold ${NV_LIBCUBLAS_DEV_PACKAGE_NAME} ${NV_LIBNCCL_DEV_PACKAGE_NAME}
-ENV LIBRARY_PATH /usr/local/cuda/lib64/stubs
+# 更新 pip
+RUN pip3 install --upgrade pip
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
-
+# 安装 PyTorch
+# 注意：这里安装的 PyTorch 版本需要与 CUDA 版本兼容
 RUN pip3 install torch torchvision torchaudio
 
+# 设置工作目录
 WORKDIR /workspace
 
+# 设置默认命令
 CMD ["/bin/bash"]
